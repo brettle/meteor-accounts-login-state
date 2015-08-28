@@ -20,19 +20,26 @@ Package.onUse(function(api) {
   api.use('tracker');
   api.use('reactive-var');
   api.use('callback-hook');
+  api.use('service-configuration');
   api.use('accounts-password', 'client', { weak: true });
-  api.addFiles('meteor-accounts-login-state.js', 'client');
+  api.addFiles('accounts-login-state-client.js', 'client');
+  api.addFiles('accounts-login-state-server.js', 'server');
   api.export('LoginState');
 });
 
 Package.onTest(function(api) {
   api.versionsFrom('1.0.4');
   api.use('tinytest');
+  api.use('constellation:console');
+  api.use('lai:ddp-inspector');
   api.use('brettle:accounts-login-state@0.0.1');
+  api.use('brettle:accounts-testing-support@0.0.1');
   api.use('underscore');
   api.use('tracker');
   api.use('reactive-var');
   api.use('accounts-base');
   api.use('accounts-password');
-  api.addFiles('meteor-accounts-login-state-tests.js', 'client');
+  api.use('service-configuration');
+  api.addFiles('accounts-login-state-client-tests.js', 'client');
+  api.addFiles('accounts-login-state-server-tests.js', 'server');
 });

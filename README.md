@@ -43,3 +43,8 @@ argument, which is an object with a `signedUp` property. If the callback can't
 determine whether the current user has signed up, it should not change that
 property. Otherwise, it should set it to `true` if the user has signed up, and
 `false` if the user hasn't.
+
+By default, there are 2 interceptors. The first considers the user signed up if
+you have installed `accounts-password` and the user has a password and either a
+username or an email. The second considers the user signed up if they have
+logged in with any 3rd party service configured with `service-configuration`.

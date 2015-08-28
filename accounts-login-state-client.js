@@ -1,5 +1,5 @@
 "use strict";
-/* globals LoginState: true, Hook*/
+/* globals LoginState: true, Hook */
 
 function LoginStateConstructor() {
   var self = this;
@@ -32,11 +32,11 @@ function LoginStateConstructor() {
   });
 
   // If accounts-password is installed and the user has a username, or at
-  // least one email address, then they are signed in.
+  // least one email address, then they are signed up.
   if (Package['accounts-password']) {
     self.addSignedUpInterceptor(function (info) {
       var u = Meteor.user();
-      if (u &&
+      if (u && u.services && u.services.password &&
         (typeof (u.username) === 'string' ||
           (u.emails && u.emails[0] &&
             typeof (u.emails[0].address) === 'string'))) {
@@ -45,10 +45,8 @@ function LoginStateConstructor() {
     });
   }
   self.addSignedUpInterceptor(function (info) {
-    // To handle oauth services, if the user has a profile.name, then they are
-    // signed in
     var u = Meteor.user();
-    if (u && u.profile && typeof (u.profile.name) === 'string') {
+    if (u && u.LoginState && u.LoginState.signedUpWithConfiguredService) {
       info.signedUp = true;
     }
   });
