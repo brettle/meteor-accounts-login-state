@@ -1,26 +1,10 @@
 "use strict";
 /* globals LoginState */
 
+var AccountsTestingSupport =
+  Package["brettle:accounts-testing-support"].AccountsTestingSupport;
 var meteorUserId = Meteor.userId;
 var meteorUser = Meteor.user;
-Tinytest.add('LoginState - loggingIn', function (test) {
-  var meteorLoggingIn = Meteor.loggingIn;
-  var meteorLoggingInCalled = false;
-  var meteorLoggingInReturnedValue = {}; // Not realistic but useful for testing
-  try {
-    Meteor.loggingIn = function () {
-      test.equal(this, Meteor, 'this != Meteor');
-      meteorLoggingInCalled = true;
-      return meteorLoggingInReturnedValue;
-    };
-    var TestLoginState = new LoginState.constructor();
-    test.equal(TestLoginState.loggingIn(), meteorLoggingInReturnedValue,
-      "Incorrect returned value");
-    test.isTrue(meteorLoggingInCalled, 'Meteor.logggingIn not called');
-  } finally {
-    Meteor.loggingIn = meteorLoggingIn;
-  }
-});
 
 Tinytest.add('LoginState - loggedIn', function (test) {
   var meteorUserIdReturnedValue = new ReactiveVar();
@@ -64,7 +48,7 @@ Tinytest.add('LoginState - loggedIn', function (test) {
   stopper.stop();
 });
 
-Tinytest.add('LoginState - signedUp', function (test) {
+Tinytest.add('LoginState - signedUp unit test', function (test) {
   var stopper;
   var meteorUserIdReturnedValue, meteorUserReturnedValue;
   var TestLoginState;
@@ -91,140 +75,70 @@ Tinytest.add('LoginState - signedUp', function (test) {
   meteorUserReturnedValue.set(null);
   Tracker.flush();
   expectedRunCount++;
-  test.isFalse(signedUpResult, 'null');
+  test.isFalse(signedUpResult, 'not logged in');
   test.equal(runCount, expectedRunCount);
 
   var user = {
-    services: {
-      resume: {
-        loginTokens: [{
-          when: {
-            "$date": 1440482363775
-          },
-          hashedToken: "hashedtokenvalue"
-        }]
-      }
-    }
   };
   meteorUserIdReturnedValue.set("testuserid");
   meteorUserReturnedValue.set(EJSON.clone(user));
   Tracker.flush();
-  test.isFalse(signedUpResult, 'only resume service');
+  test.isFalse(signedUpResult, "loginStateSignedUp undefined");
   test.equal(runCount, expectedRunCount);
 
-  user.profile = {
-    name: "Test User"
-  };
-  meteorUserReturnedValue.set(EJSON.clone(user));
-  Tracker.flush();
-  test.isFalse(signedUpResult, "profile.name set");
-  test.equal(runCount, expectedRunCount);
-  delete user.profile;
-
-  user.LoginState = {
-    signedUpWithConfiguredService: true
-  };
+  user.loginStateSignedUp = true;
   meteorUserReturnedValue.set(EJSON.clone(user));
   Tracker.flush();
   expectedRunCount++;
-  test.isTrue(signedUpResult, "LoginState.signedUpWithConfiguredService=true");
+  test.isTrue(signedUpResult, "loginStateSignedUp === true");
   test.equal(runCount, expectedRunCount);
 
-  user.LoginState.signedUpWithConfiguredService = false;
+  user.loginStateSignedUp = false;
   meteorUserReturnedValue.set(EJSON.clone(user));
   Tracker.flush();
   expectedRunCount++;
-  test.isFalse(signedUpResult,
-    "LoginState.signedUpWithConfiguredService=false");
+  test.isFalse(signedUpResult, "loginStateSignedUp === false");
   test.equal(runCount, expectedRunCount);
-
-  user.services.password = {
-    bcrypt: "bcrypted password"
-  };
-  user.emails = [{
-    address: "test@example.com",
-    verified: false
-  }];
-  meteorUserReturnedValue.set(EJSON.clone(user));
-  Tracker.flush();
-  expectedRunCount++;
-  test.isTrue(signedUpResult, "emails set");
-  test.equal(runCount, expectedRunCount);
-  delete user.emails;
-
-  user.username = "testusername";
-  meteorUserReturnedValue.set(EJSON.clone(user));
-  Tracker.flush();
-  test.isTrue(signedUpResult, "username set");
-  test.equal(runCount, expectedRunCount);
-
-  user.profile = {
-    guest: true
-  };
-  meteorUserReturnedValue.set(EJSON.clone(user));
-  Tracker.flush();
-  test.isTrue(signedUpResult, "guest: true without callback");
-  test.equal(runCount, expectedRunCount);
-
-  // Register a callback that says users with profile.guest === true are
-  // not signed in.
-  var suiStopper = TestLoginState.addSignedUpInterceptor(function (info) {
-    var u = Meteor.user();
-    if (u && u.profile && u.profile.guest && u.profile.guest === true) {
-      info.signedUp = false;
-    }
-  });
-  Tracker.flush();
-  expectedRunCount++;
-  test.isFalse(signedUpResult, "guest: true with callback");
-  test.equal(runCount, expectedRunCount);
-
-  delete user.username;
-  delete user.services.password;
 
   Meteor.userId = meteorUserId;
   Meteor.user = meteorUser;
-  suiStopper.stop();
   stopper.stop();
 });
 
 
-Tinytest.addAsync('LoginState - signedUp acceptance', function (test, done) {
+Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
   var runCount, expectedRunCount;
   var signedUpResult;
   var TestLoginState = new LoginState.constructor();
   runCount = expectedRunCount = 0;
-  var stopper = Tracker.autorun(function () {
-    runCount++;
-    signedUpResult = TestLoginState.signedUp();
-  });
-  expectedRunCount++;
+  var stopper;
+
   Meteor.logout(function (error) {
     test.isUndefined(error, 'logout failed');
     Tracker.flush();
+    stopper = Tracker.autorun(function () {
+      runCount++;
+      signedUpResult = TestLoginState.signedUp();
+    });
+    expectedRunCount++;
     test.isFalse(signedUpResult, "logged out");
     test.equal(runCount, expectedRunCount);
     loginWithTest1();
   });
 
   function loginWithTest1() {
-    var onLoginStopper = Accounts.onLogin(function () {
-      onLoginStopper.stop();
+    AccountsTestingSupport.login("test1", "testname", {}, function (error) {
+      test.isUndefined(error, 'login failed');
       Tracker.flush();
       test.isFalse(signedUpResult, "using unconfigured service");
       test.equal(runCount, expectedRunCount);
-
       configureTest1();
-    });
-    Accounts.callLoginMethod({
-      methodArguments: [{
-        test1: 'testname'
-      }]
     });
   }
 
   function configureTest1() {
-    Meteor.call('addService', 'test1', function () {
+    Meteor.call('addService', 'test1', function (error) {
+      test.isUndefined(error, 'addService failed');
       Tracker.flush();
       expectedRunCount++;
       test.isTrue(signedUpResult, "using configured service");
@@ -234,21 +148,98 @@ Tinytest.addAsync('LoginState - signedUp acceptance', function (test, done) {
   }
 
   function loginWithConfiguredTest1() {
-    var onLoginStopper = Accounts.onLogin(function () {
-      onLoginStopper.stop();
+    AccountsTestingSupport.login("test1", "testname2", {}, function (error) {
+      test.isUndefined(error, 'login with configured service failed');
       Tracker.flush();
-      test.isTrue(signedUpResult,
-        "using configured service, new user");
+      test.isTrue(signedUpResult, "using configured service, new user");
       test.equal(runCount, expectedRunCount);
+      unconfigureTest1();
+    });
+  }
 
-      Meteor.call('removeService', 'test1');
+  function unconfigureTest1() {
+    Meteor.call('removeService', 'test1', function (error) {
+      test.isUndefined(error, 'removeService failed');
+      Tracker.flush();
+      expectedRunCount++;
+      test.isFalse(signedUpResult, "using newly unconfigured service");
+      test.equal(runCount, expectedRunCount);
+      removePasswordUser();
+    });
+  }
+
+  function removePasswordUser() {
+    Meteor.call('removeUser', 'guest', function (error) {
+      test.isUndefined(error, 'removeUser failed');
+      removeInterceptorForGuest();
+    });
+  }
+
+  function removeInterceptorForGuest() {
+    Meteor.call('removeInterceptorForGuest', function (error) {
+      test.isUndefined(error, 'removeInterceptorForGuest failed');
+      createGuestPasswordUser();
+    });
+  }
+
+  function createGuestPasswordUser() {
+    var options = {
+      username: "guest",
+      email: "email",
+      password: "password",
+      profile: {
+        guest: true
+      }
+    };
+
+    Accounts.createUser(options, function (error) {
+      test.isUndefined(error, 'createUser failed');
+      Tracker.flush();
+      expectedRunCount++;
+      test.isTrue(signedUpResult,
+        "using guest password user without interceptor");
+      test.equal(runCount, expectedRunCount);
+      addInterceptorForGuest();
+    });
+  }
+
+  function addInterceptorForGuest() {
+    Meteor.call('addInterceptorForGuest', function (error) {
+      test.isUndefined(error, 'addInterceptorForGuest failed');
+      Tracker.flush();
+      expectedRunCount++;
+      test.isFalse(signedUpResult,
+        "using guest password user with interceptor");
+      test.equal(runCount, expectedRunCount);
+      logoutOfGuest();
+    });
+  }
+
+  function logoutOfGuest() {
+    Meteor.logout(function (error) {
+      test.isUndefined(error, 'logout of guest failed');
+      Tracker.flush();
+      test.isFalse(signedUpResult, "logged out after logout of guest");
+      test.equal(runCount, expectedRunCount);
+      loginAsGuest();
+    });
+  }
+
+  function loginAsGuest() {
+    Meteor.loginWithPassword("guest", "password", function (error) {
+      test.isUndefined(error, 'login of guest failed');
+      Tracker.flush();
+      test.isFalse(signedUpResult, "after logging in as guest");
+      test.equal(runCount, expectedRunCount);
+      cleanUp();
+    });
+  }
+
+  function cleanUp() {
+    Meteor.call('removeInterceptorForGuest', function (error) {
+      test.isUndefined(error, 'removeInterceptorForGuest failed in cleanUp');
       stopper.stop();
       done();
-    });
-    Accounts.callLoginMethod({
-      methodArguments: [{
-        test1: 'testname2'
-      }]
     });
   }
 });
