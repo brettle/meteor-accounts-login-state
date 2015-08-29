@@ -11,7 +11,7 @@ for an overview of the suite and a live demo.
 
 ## Installation
 ```sh
-meteor add brettle:accounts-anonymous-auto
+meteor add brettle:accounts-login-state
 ```
 
 ## Usage
@@ -43,8 +43,8 @@ users that haven't signed up should call
 callback that helps determine whether a user has signed up. The callback
 receives a single argument, which is the user record under consideration. The
 callback should set the user's `loginStateSignedUp` property to `true` if the
-callback can determine that the user has signed up, and `false` callback can
-determine that the user hasn't signed up. If the callback can't determine
+callback can determine that the user has signed up, and `false` if the callback
+can determine that the user hasn't signed up. If the callback can't determine
 whether the current user has signed up, it should not change the property. It
 must not change any part of the user record other than the `loginStateSignedUp`
 property, and future versions of this package might remove such changes.
@@ -54,9 +54,10 @@ you have installed `accounts-password` and the user has a password and either a
 username or an email. The second considers the user signed up if they have
 logged in with any 3rd party service configured with `service-configuration`.
 
-If you create guest users by using `accounts-password` to create users with
-random passwords and `profile.guest = true` you might add an interceptor like
-this:
+Here is an example of adding an interceptor. Let's say you create guest users by
+using `accounts-password` to create users with random passwords and you set
+`profile.guest = true`. You could add an interceptor to treat those users as not
+signed up by running the following code on the server:
 
 ```javascript
 LoginState.addSignedUpInterceptor(function (u) {
