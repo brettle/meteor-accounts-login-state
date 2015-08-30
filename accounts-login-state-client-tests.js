@@ -9,40 +9,33 @@ var meteorUser = Meteor.user;
 Tinytest.add('LoginState - loggedIn', function (test) {
   var meteorUserIdReturnedValue = new ReactiveVar();
   var stopper;
-  var runCount = 0;
   var loggedInResult;
   Meteor.userId = function () {
     return meteorUserIdReturnedValue.get();
   };
   var TestLoginState = new LoginState.constructor();
   stopper = Tracker.autorun(function () {
-    runCount++;
     loggedInResult = TestLoginState.loggedIn();
   });
   meteorUserIdReturnedValue.set(undefined);
   Tracker.flush();
   test.isFalse(loggedInResult, 'undefined');
-  test.equal(runCount, 1);
 
   meteorUserIdReturnedValue.set(null);
   Tracker.flush();
   test.isFalse(loggedInResult, 'null');
-  test.equal(runCount, 1);
 
   meteorUserIdReturnedValue.set("testuserid");
   Tracker.flush();
   test.isTrue(loggedInResult);
-  test.equal(runCount, 2);
 
   meteorUserIdReturnedValue.set("testuserid2");
   Tracker.flush();
   test.isTrue(loggedInResult);
-  test.equal(runCount, 2);
 
   meteorUserIdReturnedValue.set(null);
   Tracker.flush();
   test.isFalse(loggedInResult);
-  test.equal(runCount, 3);
 
   Meteor.userId = meteorUserId;
   stopper.stop();
@@ -57,8 +50,6 @@ Tinytest.add('LoginState - signedUp unit test', function (test) {
   meteorUserReturnedValue = new ReactiveVar({}, function usersEqual(a, b) {
     return EJSON.stringify(a) === EJSON.stringify(b);
   });
-  var runCount = 0;
-  var expectedRunCount = 0;
   var signedUpResult;
   Meteor.userId = function () {
     return meteorUserIdReturnedValue.get();
@@ -68,15 +59,12 @@ Tinytest.add('LoginState - signedUp unit test', function (test) {
   };
   TestLoginState = new LoginState.constructor();
   stopper = Tracker.autorun(function () {
-    runCount++;
     signedUpResult = TestLoginState.signedUp();
   });
   meteorUserIdReturnedValue.set(null);
   meteorUserReturnedValue.set(null);
   Tracker.flush();
-  expectedRunCount++;
   test.isFalse(signedUpResult, 'not logged in');
-  test.equal(runCount, expectedRunCount);
 
   var user = {
   };
@@ -84,21 +72,16 @@ Tinytest.add('LoginState - signedUp unit test', function (test) {
   meteorUserReturnedValue.set(EJSON.clone(user));
   Tracker.flush();
   test.isFalse(signedUpResult, "loginStateSignedUp undefined");
-  test.equal(runCount, expectedRunCount);
 
   user.loginStateSignedUp = true;
   meteorUserReturnedValue.set(EJSON.clone(user));
   Tracker.flush();
-  expectedRunCount++;
   test.isTrue(signedUpResult, "loginStateSignedUp === true");
-  test.equal(runCount, expectedRunCount);
 
   user.loginStateSignedUp = false;
   meteorUserReturnedValue.set(EJSON.clone(user));
   Tracker.flush();
-  expectedRunCount++;
   test.isFalse(signedUpResult, "loginStateSignedUp === false");
-  test.equal(runCount, expectedRunCount);
 
   Meteor.userId = meteorUserId;
   Meteor.user = meteorUser;
@@ -107,22 +90,17 @@ Tinytest.add('LoginState - signedUp unit test', function (test) {
 
 
 Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
-  var runCount, expectedRunCount;
   var signedUpResult;
   var TestLoginState = new LoginState.constructor();
-  runCount = expectedRunCount = 0;
   var stopper;
 
   Meteor.logout(function (error) {
     test.isUndefined(error, 'logout failed');
     Tracker.flush();
     stopper = Tracker.autorun(function () {
-      runCount++;
       signedUpResult = TestLoginState.signedUp();
     });
-    expectedRunCount++;
     test.isFalse(signedUpResult, "logged out");
-    test.equal(runCount, expectedRunCount);
     loginWithTest1();
   });
 
@@ -131,7 +109,6 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
       test.isUndefined(error, 'login failed');
       Tracker.flush();
       test.isFalse(signedUpResult, "using unconfigured service");
-      test.equal(runCount, expectedRunCount);
       configureTest1();
     });
   }
@@ -140,9 +117,7 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
     Meteor.call('addService', 'test1', function (error) {
       test.isUndefined(error, 'addService failed');
       Tracker.flush();
-      expectedRunCount++;
       test.isTrue(signedUpResult, "using configured service");
-      test.equal(runCount, expectedRunCount);
       loginWithConfiguredTest1();
     });
   }
@@ -152,7 +127,6 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
       test.isUndefined(error, 'login with configured service failed');
       Tracker.flush();
       test.isTrue(signedUpResult, "using configured service, new user");
-      test.equal(runCount, expectedRunCount);
       unconfigureTest1();
     });
   }
@@ -161,9 +135,7 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
     Meteor.call('removeService', 'test1', function (error) {
       test.isUndefined(error, 'removeService failed');
       Tracker.flush();
-      expectedRunCount++;
       test.isFalse(signedUpResult, "using newly unconfigured service");
-      test.equal(runCount, expectedRunCount);
       removePasswordUser();
     });
   }
@@ -195,10 +167,8 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
     Accounts.createUser(options, function (error) {
       test.isUndefined(error, 'createUser failed');
       Tracker.flush();
-      expectedRunCount++;
       test.isTrue(signedUpResult,
         "using guest password user without interceptor");
-      test.equal(runCount, expectedRunCount);
       addInterceptorForGuest();
     });
   }
@@ -207,10 +177,8 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
     Meteor.call('addInterceptorForGuest', function (error) {
       test.isUndefined(error, 'addInterceptorForGuest failed');
       Tracker.flush();
-      expectedRunCount++;
       test.isFalse(signedUpResult,
         "using guest password user with interceptor");
-      test.equal(runCount, expectedRunCount);
       logoutOfGuest();
     });
   }
@@ -220,7 +188,6 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
       test.isUndefined(error, 'logout of guest failed');
       Tracker.flush();
       test.isFalse(signedUpResult, "logged out after logout of guest");
-      test.equal(runCount, expectedRunCount);
       loginAsGuest();
     });
   }
@@ -230,7 +197,6 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
       test.isUndefined(error, 'login of guest failed');
       Tracker.flush();
       test.isFalse(signedUpResult, "after logging in as guest");
-      test.equal(runCount, expectedRunCount);
       cleanUp();
     });
   }
