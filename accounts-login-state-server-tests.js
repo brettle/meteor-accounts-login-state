@@ -32,6 +32,19 @@ Meteor.methods({
     if (guestInterceptorStopper) {
       guestInterceptorStopper.stop();
     }
+  },
+  waitForChangedCallbacksToComplete: function () {
+    // Do a dummy update to the user. The client will not return or call it's
+    // callback until any triggered "changed" callbacks complete.
+    Meteor.users.update({
+      _id: this.userId
+    }, {
+      $set: {
+        profile: {
+          dummyProp: "dummy value"
+        }
+      }
+    });
   }
 });
 
@@ -101,4 +114,45 @@ Tinytest.add('LoginState - signedUp', function (test) {
 
   Meteor.user = meteorUser;
   suiStopper.stop();
+});
+
+// If the the server deletes the user before the "changed" callback is called,
+// that shouldn't cause the callback to throw an error
+Tinytest.add('LoginState - change and delete logged in user', function (test) {
+  // Create a connection, and use it to login as a new user
+  Meteor.users.remove({ 'services.test1.name': "testuser" });
+  var connection = DDP.connect(Meteor.absoluteUrl());
+  var userId = connection.call('login', {
+    test1: "testuser"
+  }).id;
+  test.isNotUndefined(userId);
+  test.isNotNull(userId);
+
+  // Spy on console.log
+  var consoleLog = console.log;
+  console.log = function (/* arguments */) {
+    test.fail("console.log called, check terminal for output");
+    consoleLog.apply(console, arguments);
+  };
+
+  // Update the logged in user and then remove them. This will cause the
+  // "changed" callback associated with client's subscription to eventually be
+  // called.
+  var numUpdated = Meteor.users.update(userId, {
+    $set: {
+      profile: {
+        testProperty: "test value"
+      }
+    }
+  });
+  test.equal(numUpdated, 1);
+  Meteor.users.remove(userId);
+
+  // Wait for the change callback to be called. We do that by having the client
+  // make a method call requesting a dummy change, because method calls don't
+  // return until the DB has been updated and associated callbacks called.
+  connection.call('waitForChangedCallbacksToComplete');
+
+  // Stop spying on console.log
+  console.log = consoleLog;
 });

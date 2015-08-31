@@ -121,6 +121,13 @@ Meteor.publish(null, function () {
     var user = Meteor.users.findOne({
       _id: self.userId
     });
+    if (!user) {
+      // user has been removed, so no need to change.
+      // Also LoginState.signedUp() would call Meteor.user() if the user it is
+      // passed is falsey, and that would trigger an console error about
+      // needing to use this.userId instead.
+      return;
+    }
     self.changed('users', self.userId, {
       loginStateSignedUp: LoginState.signedUp(user)
     });
