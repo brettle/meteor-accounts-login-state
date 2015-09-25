@@ -4,7 +4,7 @@
 var guestInterceptorStopper;
 
 Meteor.methods({
-  addService: function (name) {
+  ALS_addService: function (name) {
     ServiceConfiguration.configurations.upsert({
       service: name
     }, {
@@ -13,27 +13,27 @@ Meteor.methods({
       }
     });
   },
-  removeService: function (name) {
+  ALS_removeService: function (name) {
     ServiceConfiguration.configurations.remove({
       service: name
     });
   },
-  removeUser: function (username) {
+  ALS_removeUser: function (username) {
     Meteor.users.remove({ username: username });
   },
-  addInterceptorForGuest: function () {
+  ALS_addInterceptorForGuest: function () {
     guestInterceptorStopper = LoginState.addSignedUpInterceptor(function (u) {
       if (u.services && u.services.password && u.profile && u.profile.guest) {
         u.loginStateSignedUp = false;
       }
     });
   },
-  removeInterceptorForGuest: function () {
+  ALS_removeInterceptorForGuest: function () {
     if (guestInterceptorStopper) {
       guestInterceptorStopper.stop();
     }
   },
-  waitForChangedCallbacksToComplete: function () {
+  ALS_waitForChangedCallbacksToComplete: function () {
     // Do a dummy update to the user. The client will not return or call it's
     // callback until any triggered "changed" callbacks complete.
     Meteor.users.update({
@@ -151,7 +151,7 @@ Tinytest.add('LoginState - change and delete logged in user', function (test) {
   // Wait for the change callback to be called. We do that by having the client
   // make a method call requesting a dummy change, because method calls don't
   // return until the DB has been updated and associated callbacks called.
-  connection.call('waitForChangedCallbacksToComplete');
+  connection.call('ALS_waitForChangedCallbacksToComplete');
 
   // Stop spying on console.log
   console.log = consoleLog;

@@ -114,7 +114,7 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
   }
 
   function configureTest1() {
-    Meteor.call('addService', 'test1', function (error) {
+    Meteor.call('ALS_addService', 'test1', function (error) {
       test.isUndefined(error, 'addService failed');
       Tracker.flush();
       test.isTrue(signedUpResult, "using configured service");
@@ -132,7 +132,7 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
   }
 
   function unconfigureTest1() {
-    Meteor.call('removeService', 'test1', function (error) {
+    Meteor.call('ALS_removeService', 'test1', function (error) {
       test.isUndefined(error, 'removeService failed');
       Tracker.flush();
       test.isFalse(signedUpResult, "using newly unconfigured service");
@@ -141,14 +141,14 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
   }
 
   function removePasswordUser() {
-    Meteor.call('removeUser', 'guest', function (error) {
+    Meteor.call('ALS_removeUser', 'guest', function (error) {
       test.isUndefined(error, 'removeUser failed');
       removeInterceptorForGuest();
     });
   }
 
   function removeInterceptorForGuest() {
-    Meteor.call('removeInterceptorForGuest', function (error) {
+    Meteor.call('ALS_removeInterceptorForGuest', function (error) {
       test.isUndefined(error, 'removeInterceptorForGuest failed');
       createGuestPasswordUser();
     });
@@ -174,7 +174,7 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
   }
 
   function addInterceptorForGuest() {
-    Meteor.call('addInterceptorForGuest', function (error) {
+    Meteor.call('ALS_addInterceptorForGuest', function (error) {
       test.isUndefined(error, 'addInterceptorForGuest failed');
       Tracker.flush();
       test.isFalse(signedUpResult,
@@ -202,7 +202,7 @@ Tinytest.addAsync('LoginState - signedUp accept test', function (test, done) {
   }
 
   function cleanUp() {
-    Meteor.call('removeInterceptorForGuest', function (error) {
+    Meteor.call('ALS_removeInterceptorForGuest', function (error) {
       test.isUndefined(error, 'removeInterceptorForGuest failed in cleanUp');
       stopper.stop();
       done();
