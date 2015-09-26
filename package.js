@@ -2,7 +2,7 @@
 
 Package.describe({
   name: 'brettle:accounts-login-state',
-  version: '0.0.2',
+  version: '0.0.3',
   // Brief, one-line summary of the package.
   summary: "Track the current user's login state and register callbacks that " +
     "help calculate it.",
@@ -33,14 +33,16 @@ Package.onTest(function(api) {
   api.use('brettle:accounts-login-state@0.0.1');
   api.use('brettle:accounts-testing-support@0.4.0');
   api.use('underscore');
+  api.use('ddp');
+  api.use('ejson');
   api.use('tracker');
   api.use('reactive-var');
   api.use('accounts-base');
   api.use('accounts-password');
   api.use('service-configuration');
   // These help with debugging tests
-  api.use('constellation:console');
-  api.use('lai:ddp-inspector');
+  // api.use('constellation:console');
+  // api.use('lai:ddp-inspector');
   api.addFiles('accounts-login-state-client-tests.js', 'client');
   api.addFiles('accounts-login-state-server-tests.js', 'server');
 });
