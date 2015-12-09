@@ -90,6 +90,12 @@ LoginState = new LoginStateConstructor();
 // the callbacks registered with `LoginState.addSignedUpInterceptor()`.
 Meteor.publish(null, function () {
   var self = this;
+  // The function to call to notify the subscriber. We initially set it to
+  // self.added to workaround meteorhacks:fast-render issue #142
+  // (https://github.com/kadirahq/fast-render/issues/142). Once self.added() is
+  // called once, we set it to self.changed().
+  var updateFunc = self.added.bind(self);
+  
   if (!self.userId) {
     return null;
   }
@@ -128,8 +134,9 @@ Meteor.publish(null, function () {
       // needing to use this.userId instead.
       return;
     }
-    self.changed('users', self.userId, {
+    updateFunc('users', self.userId, {
       loginStateSignedUp: LoginState.signedUp(user)
     });
+    updateFunc = self.changed.bind(self);
   }
 });
