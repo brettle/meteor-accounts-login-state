@@ -12,4 +12,4 @@ Bug #1: Login-state causes error when loaded with Fastrender
 
 
 [Unreleased]: https://github.com/brettle/meteor-accounts-login-state/compare/v0.0.4...HEAD
-[0.0.4]: https://github.com/brettle/meteor-accounts-login-state/compare/v0.0.4...v0.0.3
+[0.0.4]: https://github.com/brettle/meteor-accounts-login-state/compare/v0.0.3...v0.0.4
